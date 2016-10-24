@@ -1,0 +1,15 @@
+true: no_alias_deps, bin_annot, safe_string, debug, warn(-58), warn(@5@8@9@10@11@12@14@15@16@23@24@25@26@27@29@33@40)
+
+<src> : include
+<test> : include
+
+<src/*>: warn(@5@8@9@10@11@12@14@15@16@23@24@25@26@27@29@33@40)
+<src/*>: rectypes
+<src/*>: package(containers, sequence, ppx_deriving.show)
+
+<test/*>:  warn(@5@8@10@11@12@14@23@24@26@29@40)
+
+".git": -traverse
+".git": not_hygienic
+
+<httprouter>: -traverse

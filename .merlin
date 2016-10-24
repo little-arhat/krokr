@@ -1,0 +1,5 @@
+S src
+S test
+B _build/**
+PKG topkg containers sequence ppx_deriving.show
+FLG -w @5@8@9@10@11@12@14@15@16@23@24@25@26@27@29@33@40

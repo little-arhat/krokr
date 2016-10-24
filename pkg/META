@@ -1,0 +1,8 @@
+version = "%%VERSION_NUM%%"
+description = "fast and type-safe router"
+requires = ""
+
+archive(byte) = "carcass.cma"
+archive(native) = "carcass.cmxa"
+plugin(byte) = "carcass.cma"
+plugin(native) = "carcass.cmxs"
