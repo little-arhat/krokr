@@ -1,3 +1,4 @@
+module OrigBytes = Bytes
 open StdLabels
 
 type kind = Static | Root | CatchAll | Parameter [@@deriving show]
@@ -16,9 +17,10 @@ type node = {
   } [@@deriving show]
 let mk_node ?(path="") ?(wild_child=false)
             ?(kind=Static) ?(max_parameters=0)
-            ?(indices="") ?(children=[||])
+            ?indices ?(children=[||])
             ?(handler=None) ?(priority=0) () =
-  {path; wild_child; kind; max_parameters; indices;
+  {path; wild_child; kind; max_parameters;
+   indices = (match indices with Some i -> i | None -> Bytes.create 0);
    children; handler; priority}
 
 let create () =
@@ -65,7 +67,7 @@ let take_upto ~sub s =
   CCString.take (CCString.find ~sub s) s
 
 let index_opt s c =
-  try Some (String.index s c)
+  try Some (Bytes.index s c)
   with Not_found -> None
 
 let find_wildcard_end ~from ~max path =
@@ -143,7 +145,7 @@ let insert_child node num_params path full_path handler =
            let child = mk_node ~wild_child:true ~priority:1
                                ~kind:CatchAll ~max_parameters:1 () in
            n.children <- [|child|];
-           n.indices <- String.make 1 path.[pos];
+           n.indices <- Bytes.make 1 path.[pos];
            (* second node: node holding the variable *)
            let child2 = mk_node ~path:(sub ~from:pos path)
                                 ~kind:CatchAll ~max_parameters:1
@@ -176,7 +178,7 @@ let increment_child_priority node pos =
   if !new_pos <> pos
   then
     begin
-      let c = node.indices.[pos] in
+      let c = Bytes.get node.indices pos in
       Bytes.blit ~src:node.indices ~src_pos:(np)
                   ~dst:node.indices ~dst_pos:(np + 1)
                   ~len:(pos - np);
@@ -202,7 +204,7 @@ let add_to_non_empty node full_path num_params handler =
                     if c.max_parameters > child.max_parameters
                     then child.max_parameters <- c.max_parameters);
        n.children <- [|child|];
-       n.indices <- String.make 1 n.path.[i];
+       n.indices <- Bytes.make 1 n.path.[i];
        n.path <- sub ~from:0 ~end_:i path;
        n.handler <- None;
        n.wild_child <- false
@@ -249,11 +251,13 @@ let add_to_non_empty node full_path num_params handler =
            let n' =
              if is_param c then
                begin
-                 n.indices <- n.indices ^ (String.make 1 c);
+                 (* XXX: bug in stdlib: no BytesLabels.cat, so we have
+                    to use this hack *)
+                 n.indices <- OrigBytes.cat n.indices (Bytes.make 1 c);
                  let child = mk_node ~max_parameters:rest_params () in
                  n.children <- Array.append n.children [| child |];
-                 let _i = increment_child_priority
-                            n (Bytes.length n.indices - 1) in
+                 ignore @@ increment_child_priority
+                            n (Bytes.length n.indices - 1);
                  child
                end
              else n in
